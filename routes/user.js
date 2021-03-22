@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
-const nodemailer = require('nodemailer');
+const { isLoggedIn, isNotLoggedIn } = require('./middlewares');
 const { User, Post } = require('../models');
 const router = express.Router();
 
@@ -18,65 +18,8 @@ router.get(
   }
 );
 
-//비밀번호 찾기
-router.post('/forget-password', async (req, res, next) => {
-  if (req.body.email === '') {
-    res.status(400).send('이메일은 필수값');
-  }
-  try {
-    const user = await User.findOne({
-      where: {
-        email: req.body.email,
-      },
-    });
-    if (!user) {
-      return res.status(400).send('사용자가 없습니다.');
-    }
-
-    let generateRandom = function (min, max) {
-      let ranNum = Math.floor(Math.random() * (max - min + 1)) + min;
-      return ranNum;
-    };
-
-    const number = generateRandom(111111, 999999);
-    const email = {
-      service: 'gmail',
-      port: 587,
-      host: 'smtp.gmail.com',
-      secure: false,
-      requireTLS: true,
-      auth: {
-        user: '',
-        pass: '',
-      },
-    };
-    const send = async (data) => {
-      nodemailer.createTransport(email).sendMail(data, function (error, info) {
-        if (error) {
-          console.log(11);
-          console.error(error);
-        } else {
-          console.log(info);
-          return info.response;
-        }
-      });
-    };
-
-    const content = {
-      from: email,
-      to: 'dlgksdud23@naver.com',
-      subject: '[플로잉]인증 관련 이메일 입니다',
-      text: '오른쪽 숫자 6자리를 입력해주세요 : ' + number,
-    };
-
-    send(content);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
 //로그인
-router.post('/login', (req, res, next) => {
+router.post('/login', isNotLoggedIn, (req, res, next) => {
   //미들웨어 확장
   passport.authenticate('local', (err, user, info) => {
     if (err) {
@@ -122,14 +65,15 @@ router.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
-router.post('/logout', (req, res, next) => {
+//로그아웃
+router.post('/logout', isLoggedIn, (req, res) => {
   req.logout();
   req.session.destroy();
   res.status(200).send('로그아웃 성공');
 });
 
 //회원가입
-router.post('/', async (req, res, next) => {
+router.post('/', isNotLoggedIn, async (req, res, next) => {
   //POST /user
   try {
     //유저존재 먼저 체크

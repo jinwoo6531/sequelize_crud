@@ -7,6 +7,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: false, //필수
       },
+      //belongsTo는 FK키를 만들어준다.
+      //Userid: 1
+      //Postid: 3
     },
     {
       charset: 'utf8mb4',
