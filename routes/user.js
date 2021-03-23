@@ -6,17 +6,57 @@ const { User, Post } = require('../models');
 const router = express.Router();
 
 // 1. /auth/kakao로 로그인 요청
-router.get('/kakao', passport.authenticate('kakao'));
+// router.get('/kakao', passport.authenticate('kakao'));
 
-// 3. /auth/kakao/callback으로 프로필 반환
-router.get(
-  '/kakao/callback',
-  // done에 오류값이 전달되면 "/"로 리다이렉트합니다.
-  passport.authenticate('kakao', { failureRedirect: '/' }),
-  (req, res) => {
-    res.redirect('/');
+// // 3. /auth/kakao/callback으로 프로필 반환
+// router.get(
+//   '/kakao/callback',
+//   // done에 오류값이 전달되면 "/"로 리다이렉트합니다.
+//   passport.authenticate('kakao', { failureRedirect: '/' }),
+//   (req, res) => {
+//     res.redirect('/');
+//   }
+// );
+
+router.get('/', (req,res,next) => {
+  try {
+    if(req.user) {      
+
+      const fullUserWithoutPassword = await User.findOne({
+        where: { id: req.user.id },
+        attributes: {
+          //프론트에 비밀번호만 빼고 넘겨준다.
+          exclude: ['password'],
+        },
+        include: [
+          {
+            model: Post,
+            attributes: ['id']
+          },
+          {
+            model: User,
+            as: 'Followings',
+            attributes: ['id']
+          },
+          {
+            model: User,
+            as: 'Followers',
+            attributes: ['id']
+          },
+        ],
+      });
+      res.status(200).json(fullUserWithoutPassword);  
+    } else {
+      res.status(200).json(null);
+    }
+  } catch (error) {
+    console.error(error);
+    next(error);
   }
-);
+  
+})
+
+
 
 //로그인
 router.post('/login', isNotLoggedIn, (req, res, next) => {
