@@ -18,10 +18,9 @@ const router = express.Router();
 //   }
 // );
 
-router.get('/', (req,res,next) => {
+router.get('/', async (req, res, next) => {
   try {
-    if(req.user) {      
-
+    if (req.user) {
       const fullUserWithoutPassword = await User.findOne({
         where: { id: req.user.id },
         attributes: {
@@ -31,21 +30,21 @@ router.get('/', (req,res,next) => {
         include: [
           {
             model: Post,
-            attributes: ['id']
+            attributes: ['id'],
           },
           {
             model: User,
             as: 'Followings',
-            attributes: ['id']
+            attributes: ['id'],
           },
           {
             model: User,
             as: 'Followers',
-            attributes: ['id']
+            attributes: ['id'],
           },
         ],
       });
-      res.status(200).json(fullUserWithoutPassword);  
+      res.status(200).json(fullUserWithoutPassword);
     } else {
       res.status(200).json(null);
     }
@@ -53,10 +52,7 @@ router.get('/', (req,res,next) => {
     console.error(error);
     next(error);
   }
-  
-})
-
-
+});
 
 //로그인
 router.post('/login', isNotLoggedIn, (req, res, next) => {
@@ -138,6 +134,59 @@ router.post('/', isNotLoggedIn, async (req, res, next) => {
     res.send('회원가입 성공입니다. 한영님');
   } catch (error) {
     console.log(error);
+    next(error);
+  }
+});
+
+router.patch('/nickname', isLoggedIn, async (req, res, next) => {
+  try {
+    await User.update(
+      {
+        nickanme: req.body.nickname,
+      },
+      {
+        where: { id: req.user.id },
+      }
+    );
+    res.status(200).json({ nickanme: req.body.nickanme });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+router.patch('/:userId/follow', isLoggedIn, async (req, res, next) => {
+  //PATCH /user/1/follow
+  try {
+    const user = await User.findOne({
+      where: { id: req.params.userId },
+    });
+
+    if (!user) {
+      res.status(403).send('없는 사람입니다.');
+    }
+    await user.addFollowers(req.user.id);
+    res.status(200).json({ UserId: parseInt(req.params.userId, 10) });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+router.delete('/:userId/follow', isLoggedIn, async (req, res, next) => {
+  //PATCH /user/1/follow
+  try {
+    const user = await User.findOne({
+      where: { id: req.params.userId },
+    });
+
+    if (!user) {
+      res.status(403).send('없는 사람을 언팔하려합니다.');
+    }
+    await user.removeFollowers(req.user.id);
+    res.status(200).json({ UserId: parseInt(req.params.userId, 10) });
+  } catch (error) {
+    console.error(error);
     next(error);
   }
 });
