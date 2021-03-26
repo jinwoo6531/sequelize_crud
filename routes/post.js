@@ -2,6 +2,8 @@ const express = require('express');
 const { Post, Image, Comment, User } = require('../models');
 const { isLoggedIn } = require('./middlewares');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
 
 //게시글 작성
 router.post('/', isLoggedIn, async (req, res, next) => {
@@ -129,5 +131,28 @@ router.delete('/:postId', isLoggedIn, async (req, res, next) => {
     next(error);
   }
 });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    //어디에 저장할건지 / diskStorage는 하드디스크
+    destination(req, file, done) {
+      done(null, 'uploads');
+    },
+    filename(req, file, done) {
+      const ext = path.extname(file.originalname); //확장자 추출(.png)
+      const basename = path.basename(file.originalname, ext); //제로초
+      done(null, basename + new Date().getTime() + ext);
+    },
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 }, //20mb
+});
+router.post(
+  '/images',
+  isLoggedIn,
+  upload.array('image'),
+  async (req, res, next) => {
+    //POST /post/images
+  }
+);
 
 module.exports = router;
