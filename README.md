@@ -15,3 +15,6 @@ belongsTo => FK를 생성해준다.
 1 대 다 => hasMany / belongsTo
 다 대 다 => belongsToMany
 1 대 1 => hasOne
+
+
+[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=jinwoo6531)](https://github.com/anuraghazra/github-readme-stats)
